@@ -1,14 +1,15 @@
 const express = require('express');
 const cors = require('cors');
 const mysql = require('mysql2/promise');
-
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
 require('dotenv').config();
 
-const api = express();
-api.use(cors());
-api.use(express.json());
-
 const PORT = process.env.PORT || 5001;
+const api = express();
+
+api.use(cors());
+api.use(express.json({ limit: '25mb' }));
 
 api.listen(PORT, ()=>{
     console.log(`Server running in port : http://localhost:${PORT}`);
@@ -27,7 +28,6 @@ async function getConnection(){
 }
 
 //get all recipes
-
 api.get("/recipes", async(req, res)=>{
     try{
         const conn = await getConnection();
@@ -101,7 +101,7 @@ api.post('/grandma', async (req, res)=>{
     }
 });
 
-//modify an existing grandma
+//modify existing grandma
 api.put('/grandma/:id', async (req, res) => {
     try{
         const conn = await getConnection();
@@ -160,3 +160,53 @@ api.delete('/grandma/:id', async (req, res) => {
     }
 })
 
+
+//user signup
+api.post('/signup', async (req, res) => {
+    let conn;
+    try {
+        conn = await getConnection();
+        const { email, name, address, password } = req.body;
+        const selectEmail = 'SELECT * FROM users WHERE email = ?';
+        const [emailResult] = await conn.query(selectEmail, [email]);
+        if (emailResult.length === 0) {
+            const hashedPassword = await bcrypt.hash(password, 10);
+            const insertUser = 'INSERT INTO users (email, name, address, password) VALUES (?, ?, ?, ?)';
+            const [newUser] = await conn.query(insertUser, [email, name, address, hashedPassword]);
+            await conn.end();
+            res.status(201).json({ success: true, idUser: newUser.insertId });
+        } else {
+            res.status(400).json({ success: false, message: 'User already exists' });
+        }
+    } catch (error) {
+        res.status(400).json({ success: false, error: error.message });
+    } 
+});
+
+//user login
+api.post('/login', async (req, res) =>{
+    try{
+        conn = await getConnection();
+        const { email, password } = req.body;
+        const selectUser = 'SELECT * FROM users WHERE email = ?';
+        const [userResult] = await conn.query(selectUser, [email]);
+        if(userResult.length !== 0){
+            const samePassword = await bcrypt.compare(password, userResult[0].password);
+            if(samePassword){
+                const secretKey = process.env.KEY_TOKEN;
+                const infoToken = {email: userResult[0].email, id: userResult[0].idUser };
+                const token = jwt.sign(infoToken, secretKey, {expiresIn: '1h'});
+                await conn.end();
+                res.status(201).json({ success: true, token: token });
+            }else{
+                res.status(400).json({ success: false, message: 'Wrong password' });
+            }
+        }else{
+            res.status(400).json({ success: false, message: 'Wrong email' });
+        }
+    }catch(error){
+        res.status(400).json({ success: false, error: error.message });
+    }
+});
+
+//authorization
