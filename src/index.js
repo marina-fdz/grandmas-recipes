@@ -226,7 +226,7 @@ function authorize (req, res, next){
     }
 }
 
-//get profile user
+//get all users profiles
 api.get('/users', authorize, async(req, res) =>{
     try{
         conn = await getConnection();
