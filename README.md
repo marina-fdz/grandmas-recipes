@@ -71,7 +71,7 @@ DB_USER=your_database_user
 DB_PASS=your_database_password
 DB_NAME=your_database_name
 KEY_TOKEN=your_jwt_secret_key
-
+```
 
 ## API Endpoints
 
@@ -80,9 +80,15 @@ KEY_TOKEN=your_jwt_secret_key
 #### Get all recipes
 
     ```bash
-        GET /recipes
-        ```
+   GET /recipes
+    ```
         
 Retrieves all recipes along with their details, ingredients, images, and associated grandma.
 
+#### Get recipes by name
 
+    ```bash
+   GET /recipes/:nameRecipe
+    ```
+        
+Retrieves recipes matching the given name.
