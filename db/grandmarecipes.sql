@@ -42,8 +42,10 @@ password TEXT
 );
 
 ALTER TABLE users ADD address VARCHAR(255);
-ALTER TABLE users MODIFY email VARCHAR(255) UNIQUE;
+ALTER TABLE users MODIFY email VARCHAR(255) UNIQUE NOT NULL;
 ALTER TABLE users RENAME COLUMN username TO name;
+ALTER TABLE users MODIFY password VARCHAR(255) NOT NULL;
+ALTER TABLE users MODIFY name VARCHAR(45);
 
 CREATE TABLE images (
 idImage INT AUTO_INCREMENT PRIMARY KEY,
@@ -88,8 +90,6 @@ INNER JOIN images ON images.fkRecipe = idRecipe;
 SELECT * FROM grandmas, recipes, recipes_have_ingredients, ingredients, images WHERE grandmas.idGrandma = recipes.fkGrandma AND recipes.idRecipe = recipes_have_ingredients.fkRecipe
 AND recipes_have_ingredients.fkIngredient = ingredients.idIngredient AND images.fkRecipe = recipes.idRecipe;
 
-
-
 INSERT INTO grandmas (name, lastname, city, province, country, birthYear, bio, photo)
 VALUES ("Ana", "Romero", "Loja", "Granada", "España", 1933, "Lorem ipsum dolor sit amet, consectetur adipiscing elit.", "https://hips.hearstapps.com/hmg-prod/images/vintage-kitchen-tools-bread-box-1665515815.jpg?crop=1xw:0.9775364107627746xh;center,top&resize=980:*");
 
@@ -131,4 +131,5 @@ VALUES ("https://www.chocolateyron.com/wp-content/uploads/salmorejo.jpg",3);
 INSERT INTO images (image, fkRecipe)
 VALUES ("https://upload.wikimedia.org/wikipedia/commons/f/f8/Patatas_a_lo_pobre_%287456975814%29.jpg",2);
 
-
+SHOW INDEX FROM grandmarecipes.users;
+ALTER TABLE grandmarecipes.users DROP INDEX email;
