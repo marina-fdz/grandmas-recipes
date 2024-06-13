@@ -64,7 +64,7 @@ Grandma's Recipes API is a RESTful service that allows users to manage a databas
 
 Create a `.env` file in the root directory and add the following variables:
 
-```plaintext
+```
 PORT=5001
 DB_HOST=your_database_host
 DB_USER=your_database_user
@@ -79,16 +79,225 @@ KEY_TOKEN=your_jwt_secret_key
 
 #### Get all recipes
 
-    ```bash
    GET /recipes
-    ```
         
 Retrieves all recipes along with their details, ingredients, images, and associated grandma.
 
 #### Get recipes by name
 
-    ```bash
-   GET /recipes/:nameRecipe
-    ```
+    GET /recipes/:nameRecipe
         
 Retrieves recipes matching the given name.
+
+#### Get recipes by ID
+
+    GET /recipe/:idRecipe
+        
+Retrieves a specific recipe by its ID.
+
+#### Get all grandmas
+
+    GET /grandmas
+        
+Retrieves all grandmas.
+
+#### Get grandma by ID
+
+    GET /grandma/:idGrandma
+        
+Retrieves a specific grandma by her ID.
+
+#### User Signup
+
+    POST / signup
+        
+Creates a new user account.
+
+Request body:
+
+        {
+            "email": "user@example.com",
+            "password": "userpassword"
+        }
+
+#### User Login
+
+    POST / login
+        
+Authenticates a user and returns a JWT.
+
+Request body:
+
+        {
+            "email": "user@example.com",
+            "password": "userpassword"
+        }
+
+
+### Protected endpoints
+
+These endpoints require a valid JWT token to be included in the Authorization header.
+
+#### Get all users
+
+    GET / users
+        
+Retrieves all user profiles.
+
+
+#### Get user profile
+
+    GET /user/:idUser
+
+        
+Retrieves a specific user profile by user ID.
+
+#### Add new grandma
+
+    POST /grandma
+      
+Adds a new grandma entry associated with the logged-in user.
+
+Request body:
+
+            {
+                "name": "Grandma's name",
+                "lastname": "Lastname",
+                "city": "City",
+                "province": "Province",
+                "country": "Country",
+                "birthYear": "1933",
+                "bio": "Short biography",
+                "photo": "URL to photo"
+            }
+
+
+#### Modify grandma
+
+    PUT /grandma/:id
+      
+Modifies an existing grandma's details.
+
+#### Delete grandma
+
+    DELETE /grandma/:id
+      
+Deletes a grandma's entry by ID.
+
+#### Add new recipe
+
+    POST /recipes/new
+      
+Adds a new recipe associated with the logged-in user and a grandma.
+
+Requested body: 
+
+            {
+                "nameRecipe": "Recipe name",
+                "descRecipe": "Recipe description",
+                "cookingTime": "Cooking time",
+                "ingredients": [
+                    {
+                        "nameIngredient": "Ingredient name",
+                        "quantity": "Quantity",
+                        "unit": "Unit"
+                    }
+                ],
+                "directions": "Cooking directions",
+                "background": "Background information",
+                "images": ["Image URL"],
+                "grandma": {
+                    "nameGrandma": {
+                        "name": "Grandma's name",
+                        "lastname": "Lastname"
+                    },
+                    "location": {
+                        "city": "City",
+                        "province": "Province"
+                    }
+                }
+            }
+
+
+#### User Logout
+
+    PUT /logout
+      
+Logs out the user by invalidating the JWT.
+
+
+## Database Schema
+
+```
+CREATE DATABASE grandmarecipes;
+USE grandmarecipes;
+
+CREATE TABLE grandmas (
+    idGrandma INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(45) NOT NULL,
+    lastname VARCHAR(45),
+    city VARCHAR(45),
+    province VARCHAR(45),
+    country VARCHAR(30),
+    birthYear YEAR,
+    bio TEXT,
+    photo TEXT
+);
+
+CREATE TABLE recipes (
+    idRecipe INT AUTO_INCREMENT PRIMARY KEY,
+    nameRecipe VARCHAR(45) NOT NULL,
+    descRecipe VARCHAR(200) NOT NULL,
+    cookingTime VARCHAR(30),
+    directions MEDIUMTEXT NOT NULL,
+    background TEXT,
+    fkUser INT NOT NULL,
+    fkGrandma INT NOT NULL,
+    FOREIGN KEY (fkUser) REFERENCES users(idUser),
+    FOREIGN KEY (fkGrandma) REFERENCES grandmas(idGrandma)
+);
+
+CREATE TABLE ingredients (
+    idIngredient INT AUTO_INCREMENT PRIMARY KEY,
+    nameIngredient VARCHAR(30) NOT NULL
+);
+
+CREATE TABLE users (
+    idUser INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(45) NOT NULL,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    password VARCHAR(255) NOT NULL,
+    address VARCHAR(255)
+);
+
+CREATE TABLE images (
+    idImage INT AUTO_INCREMENT PRIMARY KEY,
+    image TEXT,
+    fkRecipe INT NOT NULL,
+    FOREIGN KEY (fkRecipe) REFERENCES recipes(idRecipe)
+);
+
+CREATE TABLE users_have_grandmas (
+    idUserGrandma INT NOT NULL PRIMARY KEY AUTO_INCREMENT,
+    fkUser INT NOT NULL,
+    fkGrandma INT NOT NULL,
+    FOREIGN KEY (fkUser) REFERENCES users(idUser),
+    FOREIGN KEY (fkGrandma) REFERENCES grandmas(idGrandma)
+);
+
+CREATE TABLE recipes_have_ingredients (
+    idRecipeIngredient INT NOT NULL PRIMARY KEY AUTO_INCREMENT,
+    quantity FLOAT,
+    unit VARCHAR(30),
+    fkIngredient INT NOT NULL,
+    fkRecipe INT NOT NULL,
+    FOREIGN KEY (fkIngredient) REFERENCES ingredients(idIngredient),
+    FOREIGN KEY (fkRecipe) REFERENCES recipes(idRecipe)
+);
+
+```
+
+## Error Handling
+
+- The API returns standard HTTP status codes for success and error states.
+- Error responses include a JSON object with an error message.
