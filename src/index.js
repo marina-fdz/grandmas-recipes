@@ -160,19 +160,18 @@ api.delete('/grandma/:id', async (req, res) => {
     }
 })
 
-
 //user signup
 api.post('/signup', async (req, res) => {
     let conn;
     try {
         conn = await getConnection();
-        const { email, name, address, password } = req.body;
+        const { email, password } = req.body;
         const selectEmail = 'SELECT * FROM users WHERE email = ?';
         const [emailResult] = await conn.query(selectEmail, [email]);
         if (emailResult.length === 0) {
             const hashedPassword = await bcrypt.hash(password, 10);
-            const insertUser = 'INSERT INTO users (email, name, address, password) VALUES (?, ?, ?, ?)';
-            const [newUser] = await conn.query(insertUser, [email, name, address, hashedPassword]);
+            const insertUser = 'INSERT INTO users (email, password) VALUES (?, ?)';
+            const [newUser] = await conn.query(insertUser, [email, hashedPassword]);
             await conn.end();
             res.status(201).json({ success: true, idUser: newUser.insertId });
         } else {
@@ -210,3 +209,45 @@ api.post('/login', async (req, res) =>{
 });
 
 //authorization
+function authorize (req, res, next){
+    const tokenString = req.headers.authorization;
+    if(!tokenString){
+        res.status(400).json({success: false, message: 'User not authorized'});
+    }else{
+        try{
+            const token = tokenString.split(' ')[1];
+            const secretKey = process.env.KEY_TOKEN;
+            const verifiedToken = jwt.verify(token, secretKey);
+            req.userInfo = verifiedToken;
+        }catch(error){
+            res.status(400).json({ success: false, message: error })
+        }
+        next();
+    }
+}
+
+//get profile user
+api.get('/users', authorize, async(req, res) =>{
+    try{
+        conn = await getConnection();
+        const select = 'SELECT * FROM users';
+        const [result] = await conn.query(select);
+        await conn.end();
+        res.status(201).json({ success: true, data: result });
+    }catch(error){
+        res.status(400).json({ success: false, error: error.message });
+    }
+});
+
+//logout
+api.put("/logout", async (req, res) => {
+    const authHeader = req.headers["authorization"];
+    jwt.sign(authHeader, "", { expiresIn: 1 } , (logout, err) => {
+       if (logout) {
+          res.send({success: true, message : 'Session ended' });
+       } else {
+          res.send({success: false, message:'Error while logging out'});
+       }
+    });
+ });
+
