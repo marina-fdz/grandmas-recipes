@@ -31,17 +31,80 @@ async function getConnection(){
 api.get("/recipes", async(req, res)=>{
     try{
         const conn = await getConnection();
-        const select = "SELECT * FROM grandmas INNER JOIN recipes ON grandmas.idGrandma = recipes.fkGrandma INNER JOIN recipes_have_ingredients ON recipes.idRecipe = recipes_have_ingredients.fkRecipe INNER JOIN ingredients ON recipes_have_ingredients.fkIngredient = ingredients.idIngredient INNER JOIN images ON images.fkRecipe = recipes.idRecipe;";
+        const select = `SELECT 
+            recipes.idRecipe, 
+            recipes.nameRecipe,
+            recipes.descRecipe,
+            recipes.cookingTime,
+            ingredients.idIngredient,
+            ingredients.nameIngredient,
+            recipes_have_ingredients.quantity,
+            recipes_have_ingredients.unit,
+            recipes.directions,
+            recipes.background,
+            images.image,
+            grandmas.idGrandma, 
+            grandmas.name,
+            grandmas.lastname,
+            grandmas.city,
+            grandmas.province,
+            grandmas.photo
+            FROM grandmas INNER JOIN recipes ON grandmas.idGrandma = recipes.fkGrandma INNER JOIN recipes_have_ingredients ON recipes.idRecipe = recipes_have_ingredients.fkRecipe INNER JOIN ingredients ON recipes_have_ingredients.fkIngredient = ingredients.idIngredient INNER JOIN images ON images.fkRecipe = recipes.idRecipe;`;
         const [results] = await conn.query(select);
         await conn.end();
+
+        const recipesMap = new Map();
+        results.forEach(row => {
+            if (!recipesMap.has(row.idRecipe)) {
+                recipesMap.set(row.idRecipe, {
+                    idRecipe: row.idRecipe,
+                    nameRecipe: row.nameRecipe,
+                    descRecipe: row.descRecipe,
+                    cookingTime: row.cookingTime,
+                    ingredients: [],
+                    directions: row.directions,
+                    background: row.background,
+                    images: [],
+                    grandma: {
+                        idGrandma: row.idGrandma,
+                        nameGrandma: {
+                            name: row.grandmaName,
+                            lastname: row.grandmaLastname
+                        },
+                        location: {
+                            city: row.grandmaCity,
+                            province: row.grandmaProvince
+                        },
+                        photo: row.grandmaPhoto
+                    }
+                });
+            }
+
+            // Add ingredient to the recipe
+            recipesMap.get(row.idRecipe).ingredients.push({
+                idIngredient: row.idIngredient,
+                nameIngredient: row.nameIngredient,
+                quantity: row.quantity,
+                unit: row.unit
+            });
+
+            // Add image to the recipe if not already added
+            if (row.image && !recipesMap.get(row.idRecipe).images.some(img => img === row.image)) {
+                recipesMap.get(row.idRecipe).images.push(row.image);
+            }
+        });
+
+        const recipes = Array.from(recipesMap.values());
+
         res.status(200).json({
-            info: {count: results.length},
-            results: results,
+            info: {count: recipes.length},
+            results: recipes,
         });
     }catch (error){
         res.status(400).json(error);
     }
 });
+
 
 //get all grandmas
 api.get("/grandmas", async(req, res)=>{
