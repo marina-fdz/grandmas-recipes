@@ -65,7 +65,7 @@ Grandma's Recipes API is a RESTful service that allows users to manage a databas
 Create a `.env` file in the root directory and add the following variables:
 
 ```
-PORT=5001
+PORT=your_chosen_port
 DB_HOST=your_database_host
 DB_USER=your_database_user
 DB_PASS=your_database_password
