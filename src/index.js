@@ -68,14 +68,14 @@ api.get("/recipes", async(req, res)=>{
                     grandma: {
                         idGrandma: row.idGrandma,
                         nameGrandma: {
-                            name: row.grandmaName,
-                            lastname: row.grandmaLastname
+                            name: row.name,
+                            lastname: row.lastname
                         },
                         location: {
-                            city: row.grandmaCity,
-                            province: row.grandmaProvince
+                            city: row.city,
+                            province: row.province
                         },
-                        photo: row.grandmaPhoto
+                        photo: row.photo
                     }
                 });
             }
@@ -105,6 +105,178 @@ api.get("/recipes", async(req, res)=>{
     }
 });
 
+//get recipes by name
+api.get("/recipes/:nameRecipe", async (req, res) => {
+    try {
+        const conn = await getConnection();
+        const { nameRecipe } = req.params;
+        const select = `SELECT 
+            recipes.idRecipe, 
+            recipes.nameRecipe,
+            recipes.descRecipe,
+            recipes.cookingTime,
+            ingredients.idIngredient,
+            ingredients.nameIngredient,
+            recipes_have_ingredients.quantity,
+            recipes_have_ingredients.unit,
+            recipes.directions,
+            recipes.background,
+            images.image,
+            grandmas.idGrandma, 
+            grandmas.name AS grandmaName,
+            grandmas.lastname AS grandmaLastname,
+            grandmas.city AS grandmaCity,
+            grandmas.province AS grandmaProvince,
+            grandmas.photo AS grandmaPhoto
+            FROM grandmas 
+            INNER JOIN recipes ON grandmas.idGrandma = recipes.fkGrandma 
+            INNER JOIN recipes_have_ingredients ON recipes.idRecipe = recipes_have_ingredients.fkRecipe 
+            INNER JOIN ingredients ON recipes_have_ingredients.fkIngredient = ingredients.idIngredient 
+            INNER JOIN images ON images.fkRecipe = recipes.idRecipe
+            WHERE recipes.nameRecipe LIKE ?;`;
+        const [results] = await conn.query(select, [`%${nameRecipe}%`]);
+        await conn.end();
+
+        const recipesMap = new Map();
+        results.forEach(row => {
+            if (!recipesMap.has(row.idRecipe)) {
+                recipesMap.set(row.idRecipe, {
+                    idRecipe: row.idRecipe,
+                    nameRecipe: row.nameRecipe,
+                    descRecipe: row.descRecipe,
+                    cookingTime: row.cookingTime,
+                    ingredients: [],
+                    directions: row.directions,
+                    background: row.background,
+                    images: [],
+                    grandma: {
+                        idGrandma: row.idGrandma,
+                        nameGrandma: {
+                            name: row.grandmaName,
+                            lastname: row.grandmaLastname
+                        },
+                        location: {
+                            city: row.grandmaCity,
+                            province: row.grandmaProvince
+                        },
+                        photo: row.grandmaPhoto
+                    }
+                });
+            }
+            recipesMap.get(row.idRecipe).ingredients.push({
+                idIngredient: row.idIngredient,
+                nameIngredient: row.nameIngredient,
+                quantity: row.quantity,
+                unit: row.unit
+            });
+            if (row.image && !recipesMap.get(row.idRecipe).images.some(img => img === row.image)) {
+                recipesMap.get(row.idRecipe).images.push(row.image);
+            }
+        });
+
+        const recipes = Array.from(recipesMap.values());
+        if (recipes.length === 0) {
+            res.status(200).json({
+                success: false,
+                message: `We couldn't find any recipe by that name`
+            });
+        } else {
+            res.status(200).json({
+                success: true,
+                count: recipes.length,
+                data: recipes
+            });
+        } 
+    } catch (error) {
+        res.status(400).json(error);
+    }
+});
+
+//get recipe by id
+api.get("/recipe/:idRecipe", async (req, res) => {
+    try {
+        const conn = await getConnection();
+        const { idRecipe } = req.params;
+        const select = `SELECT 
+            recipes.idRecipe, 
+            recipes.nameRecipe,
+            recipes.descRecipe,
+            recipes.cookingTime,
+            ingredients.idIngredient,
+            ingredients.nameIngredient,
+            recipes_have_ingredients.quantity,
+            recipes_have_ingredients.unit,
+            recipes.directions,
+            recipes.background,
+            images.image,
+            grandmas.idGrandma, 
+            grandmas.name AS grandmaName,
+            grandmas.lastname AS grandmaLastname,
+            grandmas.city AS grandmaCity,
+            grandmas.province AS grandmaProvince,
+            grandmas.photo AS grandmaPhoto
+            FROM grandmas 
+            INNER JOIN recipes ON grandmas.idGrandma = recipes.fkGrandma 
+            INNER JOIN recipes_have_ingredients ON recipes.idRecipe = recipes_have_ingredients.fkRecipe 
+            INNER JOIN ingredients ON recipes_have_ingredients.fkIngredient = ingredients.idIngredient 
+            INNER JOIN images ON images.fkRecipe = recipes.idRecipe
+            WHERE recipes.idRecipe = ?;`;
+        const [results] = await conn.query(select, [idRecipe]);
+        await conn.end();
+
+        const recipesMap = new Map();
+        results.forEach(row => {
+            if (!recipesMap.has(row.idRecipe)) {
+                recipesMap.set(row.idRecipe, {
+                    idRecipe: row.idRecipe,
+                    nameRecipe: row.nameRecipe,
+                    descRecipe: row.descRecipe,
+                    cookingTime: row.cookingTime,
+                    ingredients: [],
+                    directions: row.directions,
+                    background: row.background,
+                    images: [],
+                    grandma: {
+                        idGrandma: row.idGrandma,
+                        nameGrandma: {
+                            name: row.grandmaName,
+                            lastname: row.grandmaLastname
+                        },
+                        location: {
+                            city: row.grandmaCity,
+                            province: row.grandmaProvince
+                        },
+                        photo: row.grandmaPhoto
+                    }
+                });
+            }
+            recipesMap.get(row.idRecipe).ingredients.push({
+                idIngredient: row.idIngredient,
+                nameIngredient: row.nameIngredient,
+                quantity: row.quantity,
+                unit: row.unit
+            });
+            if (row.image && !recipesMap.get(row.idRecipe).images.some(img => img === row.image)) {
+                recipesMap.get(row.idRecipe).images.push(row.image);
+            }
+        });
+
+        const recipes = Array.from(recipesMap.values());
+        if (recipes.length === 0) {
+            res.status(200).json({
+                success: false,
+                message: `We couldn't find any recipe by that id`
+            });
+        } else {
+            res.status(200).json({
+                success: true,
+                data: recipes[0]
+            });
+        } 
+    } catch (error) {
+        res.status(400).json(error);
+    }
+});
 
 //get all grandmas
 api.get("/grandmas", async(req, res)=>{
@@ -147,81 +319,6 @@ api.get('/grandma/:idGrandma', async(req, res)=>{
     }
 });
 
-//add new grandma
-api.post('/grandma', async (req, res)=>{
-    try{
-        const conn = await getConnection();
-        const { name, lastname, city, province, country, birthYear, bio, photo } = req.body;
-        const insert = "INSERT INTO grandmas (name, lastname, city, province, country, birthYear, bio, photo) VALUES (?,?,?,?,?,?,?,?)";
-        const [newGrandma] = await conn.query(insert, [name, lastname, city, province, country, birthYear, bio, photo]);
-        await conn.end();
-        res.status(200).json({
-            success: true,
-            idGrandma: newGrandma.insertId
-        })
-    }catch(error){
-        res.status(400).json(error);
-    }
-});
-
-//modify existing grandma
-api.put('/grandma/:id', async (req, res) => {
-    try{
-        const conn = await getConnection();
-        const idGrandma = req.params.id;
-        const data = req.body;
-        const update = "UPDATE grandmas SET name = ?, lastname = ?, city = ?, province = ?, country = ?, birthYear = ?, bio = ?, photo = ? WHERE idGrandma = ?";
-        const [result] = await conn.query(update, [
-            data.name, 
-            data.lastname, 
-            data.city, 
-            data.province, 
-            data.country, 
-            data.birthYear, 
-            data.bio, 
-            data.photo,
-            idGrandma,
-        ]);
-        await conn.end();
-        if(result.affectedRows > 0){
-            res.status(200).json({ 
-                success: true,
-                message: result.affectedRows + ' fields updated'
-             });
-        }else{
-            res.status(400).json({ 
-                success: false, 
-                message: 'That id does not exist in our data base' 
-            });
-        }
-    }catch(error){
-        res.status(400).json(error);
-    }
-})
-
-//delete grandma
-api.delete('/grandma/:id', async (req, res) => {
-    try{
-        const conn = await getConnection();
-        const idGrandma = req.params.id;
-        const deleteSQL = "DELETE FROM grandmas WHERE idGrandma = ?";
-        const [result] = await conn.query(deleteSQL, [idGrandma]);
-        await conn.end();
-        if(result.affectedRows > 0){
-            res.status(200).json({ 
-                success: true,
-                message: `The row with idGrandma = ${idGrandma} has been deleted.`
-             });
-        }else{
-            res.status(400).json({ 
-                success: false, 
-                message: 'That id does not exist in our data base' 
-            });
-        }
-    }catch(error){
-        res.status(400).json(error);
-    }
-})
 
 //user signup
 api.post('/signup', async (req, res) => {
@@ -301,6 +398,175 @@ api.get('/users', authorize, async(req, res) =>{
         res.status(400).json({ success: false, error: error.message });
     }
 });
+
+//get user profile
+api.get('/user/:idUser', authorize, async(req, res) =>{
+    try{
+        const {idUser} = req.params;
+        conn = await getConnection();
+        const select = 'SELECT * FROM users WHERE idUser = ?';
+        const [result] = await conn.query(select, [idUser]);
+        await conn.end();
+        if (result.length === 0) {
+            return res.status(400).json({ success: false, message: 'User not found' });
+        }else{
+            res.status(200).json({ success: true, data: result[0] });
+        } 
+    }catch(error){
+        res.status(400).json({ success: false, error: error.message });
+    }
+});
+
+//add new grandma associated with user
+api.post('/grandma', authorize, async (req, res)=>{
+    try{
+        const conn = await getConnection();
+        const { name, lastname, city, province, country, birthYear, bio, photo } = req.body;
+        const idUser = req.userInfo.id;
+        const insertGrandma = "INSERT INTO grandmas (name, lastname, city, province, country, birthYear, bio, photo) VALUES (?,?,?,?,?,?,?,?)";
+        const [newGrandma] = await conn.query(insertGrandma, [name, lastname, city, province, country, birthYear, bio, photo]);
+        const insertUserGrandma = "INSERT INTO users_have_grandmas (fkUser, fkGrandma) VALUES (?,?)";
+        await conn.query(insertUserGrandma, [ idUser , newGrandma.insertId ]);
+        await conn.end();
+        res.status(200).json({
+            success: true,
+            info: {idGrandma: newGrandma.insertId, idUser: idUser}
+        })
+    }catch(error){
+        console.error('Error:', error); 
+        res.status(400).json(error);
+    }
+});
+
+//modify any existing grandma
+api.put('/grandma/:id', authorize, async (req, res) => {
+    try{
+        const conn = await getConnection();
+        const idGrandma = req.params.id;
+        const data = req.body;
+        const update = "UPDATE grandmas SET name = ?, lastname = ?, city = ?, province = ?, country = ?, birthYear = ?, bio = ?, photo = ? WHERE idGrandma = ?";
+        const [result] = await conn.query(update, [
+            data.name, 
+            data.lastname, 
+            data.city, 
+            data.province, 
+            data.country, 
+            data.birthYear, 
+            data.bio, 
+            data.photo,
+            idGrandma,
+        ]);
+        await conn.end();
+        if(result.affectedRows > 0){
+            res.status(200).json({ 
+                success: true,
+                message: result.affectedRows + ' fields updated'
+             });
+        }else{
+            res.status(400).json({ 
+                success: false, 
+                message: 'That id does not exist in our data base' 
+            });
+        }
+    }catch(error){
+        res.status(400).json(error);
+    }
+})
+
+//delete grandma not associated with user
+api.delete('/grandma/:id', authorize, async (req, res) => {
+    try{
+        const conn = await getConnection();
+        const idGrandma = req.params.id;
+        const deleteSQL = "DELETE FROM grandmas WHERE idGrandma = ?";
+        const [result] = await conn.query(deleteSQL, [idGrandma]);
+        await conn.end();
+        if(result.affectedRows > 0){
+            res.status(200).json({ 
+                success: true,
+                message: `The row with idGrandma = ${idGrandma} has been deleted.`
+             });
+        }else{
+            res.status(400).json({ 
+                success: false, 
+                message: 'That id does not exist in our data base' 
+            });
+        }
+    }catch(error){
+        res.status(400).json(error);
+    }
+})
+
+//add new recipe associated with user and grandma
+api.post('/recipes/new', authorize, async (req, res) => {
+    try {
+        const conn = await getConnection();
+        const {
+            nameRecipe,
+            descRecipe,
+            cookingTime,
+            ingredients,
+            directions,
+            background,
+            images,
+            grandma
+        } = req.body;
+        
+        const idUser = req.userInfo.id;
+
+        if (!nameRecipe || !descRecipe || !cookingTime || !ingredients || !directions || !background || !images || !grandma) {
+            return res.status(400).json({ error: 'Missing required fields' });
+        }
+        console.log(grandma);
+        const insertGrandmaQuery = `
+            INSERT INTO grandmas (name, lastname, city, province)
+            VALUES (?, ?, ?, ?);
+        `;
+
+        const insertRecipeQuery = `
+            INSERT INTO recipes (nameRecipe, descRecipe, cookingTime, fkGrandma, directions, background, fkUser)
+            VALUES (?, ?, ?, ?, ?, ?, ?);
+        `;
+        
+        const insertIngredientQuery = `
+            INSERT INTO ingredients (nameIngredient)
+            VALUES (?);
+        `;
+
+        const insertHaveIngredientQuery = `
+            INSERT INTO recipes_have_ingredients (fkRecipe, fkIngredient, quantity, unit)
+            VALUES (?, ?, ?, ?);
+        `;
+        const insertImageQuery = `
+            INSERT INTO images (fkRecipe, image)
+            VALUES (?, ?);
+        `;
+
+        const[grandmaResult] = await conn.query(insertGrandmaQuery, [grandma.nameGrandma.name, grandma.nameGrandma.lastname, grandma.location.city, grandma.location.province]);
+        const idGrandma = grandmaResult.insertId;
+
+        const [recipeResult] = await conn.query(insertRecipeQuery, [nameRecipe, descRecipe, cookingTime, idGrandma, directions, background, idUser]);
+        const idRecipe = recipeResult.insertId;
+
+        for (const ingredient of ingredients) {
+            const [ingredientResult] = await conn.query(insertIngredientQuery, [ingredient.nameIngredient]);
+            const idIngredient = ingredientResult.insertId;
+
+            await conn.query(insertHaveIngredientQuery, [idRecipe, idIngredient, ingredient.quantity, ingredient.unit]);
+        }
+
+        for (const image of images) {
+            await conn.query(insertImageQuery, [idRecipe, image]);
+        }
+
+        await conn.end();
+        res.status(201).json({ message: 'Recipe added successfully', idRecipe });
+    } catch (error) {
+        console.error('Error adding recipe:', error);
+        res.status(400).json({ sucess: false, error: 'Failed to add recipe', error: error});
+    }
+});
+
 
 //logout
 api.put("/logout", async (req, res) => {
