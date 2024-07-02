@@ -37,13 +37,13 @@ Grandma's Recipes API is a RESTful service that allows users to manage a databas
 1. Clone the repository:
 
     ```bash
-    git clone https://github.com/Adalab/modulo-4-evaluacion-final-bpw-marina-fdz.git
+    git clone https://github.com/marina-fdz/grandmas-recipes.git
     ```
 
 2. Navigate to the project directory:
 
     ```bash
-    cd modulo-4-evaluacion-final-bpw-marina-fdz.git
+    cd grandmas-recipes
     ```
 
 3. Install dependencies:
@@ -301,3 +301,7 @@ CREATE TABLE recipes_have_ingredients (
 
 - The API returns standard HTTP status codes for success and error states.
 - Error responses include a JSON object with an error message.
+
+## Author
+
+[@marina-fdz](https://www.github.com/marina-fdz)
