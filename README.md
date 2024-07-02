@@ -1,6 +1,6 @@
 # Grandma's Recipes API
 
-Grandma's Recipes API is a RESTful service that allows users to manage a database of recipes contributed by grandmas. Users can view recipes and grandmas, register and login, and upon authentication, add new recipes and grandmas. Additionally, users can modify and delete grandmas' entries.
+Grandma's Recipes API is a RESTful service that allows users to manage a database of recipes contributed by grandmas. Users can view recipes and grandmas, register and login, and upon authentication, add new recipes and grandmas. Additionally, registered users can modify and delete grandmas' entries.
 
 ## Table of Contents
 
